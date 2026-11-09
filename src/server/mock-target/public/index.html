@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doping Hafıza - Masaüstü Eğitim Platformu (Simulator)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-color: #0b0d14;
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+    }
+    .neon-border {
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      box-shadow: 0 0 15px rgba(139, 92, 246, 0.15);
+    }
+    .glow-cyan {
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.25);
+    }
+    .glow-emerald {
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.25);
+    }
+    .dragging {
+      opacity: 0.5;
+      transform: scale(0.95);
+    }
+    .drop-hover {
+      border-color: #10b981 !important;
+      background-color: rgba(16, 185, 129, 0.15) !important;
+    }
+  </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+  <!-- Top App Navigation Bar -->
+  <header class="h-14 bg-[#111420] border-b border-gray-800 flex items-center justify-between px-5 select-none">
+    <div class="flex items-center space-x-4">
+      <div class="flex items-center space-x-2">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center font-bold text-white shadow-lg">
+          D
+        </div>
+        <span class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-purple-400 via-indigo-300 to-cyan-400 bg-clip-text text-transparent">
+          DOPİNG HAFIZA
+        </span>
+      </div>
+      <span class="text-xs px-2 py-0.5 rounded-full bg-purple-950/80 text-purple-300 border border-purple-800/60 font-medium">
+        Desktop v1.16.5
+      </span>
+    </div>
+
+    <!-- Grade Level Segmented Control -->
+    <div class="flex items-center bg-[#090b12] p-1 rounded-xl border border-gray-800 text-xs font-semibold" id="level-selector">
+      <button onclick="setLevel('PRIMARY')" id="btn-level-PRIMARY" class="px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition-all">
+        İlkokul
+      </button>
+      <button onclick="setLevel('MIDDLE_LGS')" id="btn-level-MIDDLE_LGS" class="px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition-all">
+        Ortaokul / LGS
+      </button>
+      <button onclick="setLevel('HIGH_YKS')" id="btn-level-HIGH_YKS" class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow transition-all">
+        12. Sınıf / YKS
+      </button>
+    </div>
+
+    <!-- User Profile Badge & Crash Simulator Switch -->
+    <div class="flex items-center space-x-3">
+      <label class="flex items-center space-x-1.5 text-xs text-amber-400 bg-amber-950/30 border border-amber-800/40 px-2 py-1 rounded-md cursor-pointer hover:bg-amber-950/50">
+        <input type="checkbox" id="crash-toggle" class="rounded accent-amber-500" onchange="toggleSimulatedCrash(this.checked)" />
+        <span>Çökme Simüle Et</span>
+      </label>
+      <div class="flex items-center space-x-2 bg-gray-900/80 px-3 py-1.5 rounded-lg border border-gray-800">
+        <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
+        <span class="text-xs text-gray-300 font-medium" id="student-name">Muhammed Yakut (Öğrenci)</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Work Area -->
+  <div class="flex-1 flex overflow-hidden">
+    <!-- Sidebar Menu (Hierarchical Fallback Route) -->
+    <aside class="w-64 bg-[#0d101a] border-r border-gray-800/80 flex flex-col p-4 space-y-4">
+      <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Hiyerarşik Gezinti</div>
+      
+      <div class="space-y-1 text-sm font-medium" id="sidebar-menu">
+        <div class="p-2 rounded-lg bg-purple-950/40 border border-purple-800/30 text-purple-300 flex items-center justify-between cursor-pointer" onclick="toggleSubmenu('mat-sub')">
+          <span class="flex items-center space-x-2">
+            <span>📐</span>
+            <span id="sidebar-subject-mat">Matematik</span>
+          </span>
+          <span class="text-xs">▼</span>
+        </div>
+
+        <div id="mat-sub" class="pl-6 space-y-1 pt-1">
+          <div id="hierarchical-topic-uslu" onclick="openTopic('Matematik', 'Üslü Sayılar')" class="p-2 rounded-md hover:bg-gray-800/60 cursor-pointer text-gray-300 hover:text-white flex items-center justify-between transition-colors">
+            <span>Üslü Sayılar</span>
+            <span class="text-[10px] bg-purple-900/60 px-1.5 py-0.5 rounded text-purple-200">12. Sınıf</span>
+          </div>
+          <div onclick="openTopic('Matematik', 'Köklü Sayılar')" class="p-2 rounded-md hover:bg-gray-800/60 cursor-pointer text-gray-400 hover:text-white flex items-center justify-between transition-colors">
+            <span>Köklü Sayılar</span>
+            <span class="text-[10px] bg-gray-800 px-1.5 py-0.5 rounded text-gray-400">12. Sınıf</span>
+          </div>
+          <div onclick="openTopic('Matematik', 'Fonksiyonlar')" class="p-2 rounded-md hover:bg-gray-800/60 cursor-pointer text-gray-400 hover:text-white flex items-center justify-between transition-colors">
+            <span>Fonksiyonlar</span>
+            <span class="text-[10px] bg-gray-800 px-1.5 py-0.5 rounded text-gray-400">12. Sınıf</span>
+          </div>
+        </div>
+
+        <div class="p-2 rounded-lg hover:bg-gray-800/50 text-gray-400 cursor-pointer flex items-center space-x-2 transition-colors">
+          <span>📖</span>
+          <span>Türkçe / Edebiyat</span>
+        </div>
+        <div class="p-2 rounded-lg hover:bg-gray-800/50 text-gray-400 cursor-pointer flex items-center space-x-2 transition-colors">
+          <span>⚡</span>
+          <span>Fizik</span>
+        </div>
+      </div>
+
+      <div class="mt-auto p-3 rounded-xl bg-gradient-to-br from-indigo-950/40 to-purple-950/40 border border-indigo-900/40 text-xs text-gray-300">
+        <div class="font-bold text-indigo-400 mb-1">Doping Akıllı Koç</div>
+        <div>Hedef: YKS Sayısal İlk 1000. Bugün 3 test çözüldü.</div>
+      </div>
+    </aside>
+
+    <!-- Main Content Stage -->
+    <main class="flex-1 overflow-y-auto p-6 bg-[#090b12]" id="content-stage">
+
+      <!-- View 1: Dashboard & Quick Cards (Primary Fast Route) -->
+      <section id="view-dashboard" class="space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl font-bold tracking-tight text-white">Hoş Geldin, Çalışma Odan Hazır!</h1>
+            <p class="text-gray-400 text-sm">Son kaldığın konudan veya hızlı kartlardan devam et.</p>
+          </div>
+          <span class="px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-800 text-emerald-400 text-xs font-semibold">
+            Hazır &amp; Çevrimiçi
+          </span>
+        </div>
+
+        <!-- Quick Access Card (Fast Route) -->
+        <div class="p-6 rounded-2xl bg-gradient-to-r from-purple-900/40 via-indigo-900/30 to-blue-900/20 border border-purple-800/40 shadow-xl flex items-center justify-between" id="quick-card-uslu">
+          <div class="space-y-2">
+            <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+              Son Çalışılan Ders
+            </span>
+            <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+              <span>Matematik: Üslü Sayılar &amp; Özellikleri</span>
+            </h2>
+            <p class="text-xs text-gray-400">12. Sınıf / YKS Hazırlık • Video + İnteraktif Alıştırma + 5 Soruluk Mini Test</p>
+          </div>
+          <button id="btn-quick-start-uslu" onclick="openTopic('Matematik', 'Üslü Sayılar')" class="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-sm shadow-lg shadow-purple-600/30 transition-all transform active:scale-95 flex items-center space-x-2">
+            <span>Dersi Başlat</span>
+            <span>➔</span>
+          </button>
+        </div>
+
+        <!-- Additional Course Cards -->
+        <div class="grid grid-cols-3 gap-4">
+          <div class="p-4 rounded-xl bg-[#111422] border border-gray-800/80 hover:border-purple-800/60 transition-all cursor-pointer" onclick="openTopic('Matematik', 'Köklü Sayılar')">
+            <div class="text-lg mb-1">📐 Matematik</div>
+            <div class="font-bold text-sm text-gray-200">Köklü Sayılar</div>
+            <div class="text-xs text-gray-500 mt-2">Tamamlanma: %40</div>
+          </div>
+          <div class="p-4 rounded-xl bg-[#111422] border border-gray-800/80 hover:border-purple-800/60 transition-all cursor-pointer">
+            <div class="text-lg mb-1">📖 Türkçe</div>
+            <div class="font-bold text-sm text-gray-200">Paragrafta Anlam</div>
+            <div class="text-xs text-gray-500 mt-2">Tamamlanma: %85</div>
+          </div>
+          <div class="p-4 rounded-xl bg-[#111422] border border-gray-800/80 hover:border-purple-800/60 transition-all cursor-pointer">
+            <div class="text-lg mb-1">⚡ Fizik</div>
+            <div class="font-bold text-sm text-gray-200">Kuvvet ve Hareket</div>
+            <div class="text-xs text-gray-500 mt-2">Tamamlanma: %10</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- View 2: Topic Interactive Lesson (Video + Drag & Drop + Quiz) -->
+      <section id="view-lesson" class="hidden space-y-6">
+        <div class="flex items-center justify-between border-b border-gray-800 pb-4">
+          <div class="flex items-center space-x-3">
+            <button onclick="goHome()" class="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300">
+              ← Geri
+            </button>
+            <div>
+              <h2 class="text-xl font-bold text-white" id="lesson-title">Matematik - Üslü Sayılar</h2>
+              <span class="text-xs text-purple-400 font-semibold" id="lesson-subtitle">12. Sınıf YKS Modülü</span>
+            </div>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button onclick="jumpToTab('video')" id="tab-btn-video" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-600 text-white">1. Video Ders</button>
+            <button onclick="jumpToTab('drag')" id="tab-btn-drag" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-800 text-gray-300 hover:bg-gray-700">2. Eşleştirme</button>
+            <button onclick="jumpToTab('quiz')" id="tab-btn-quiz" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-800 text-gray-300 hover:bg-gray-700">3. Mini Test</button>
+            <button onclick="jumpToTab('analysis')" id="tab-btn-analysis" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-800 text-gray-300 hover:bg-gray-700">4. Analiz</button>
+          </div>
+        </div>
+
+        <!-- Tab Content 1: Video Player -->
+        <div id="tab-content-video" class="space-y-4">
+          <div class="relative w-full aspect-video max-h-[460px] bg-black rounded-2xl overflow-hidden border border-gray-800 flex flex-col justify-between p-4 shadow-2xl">
+            <!-- Simulated Video Canvas / Stream -->
+            <canvas id="video-canvas" width="800" height="450" class="absolute inset-0 w-full h-full object-cover"></canvas>
+            <video id="doping-video-player" class="hidden" playsinline muted loop></video>
+
+            <!-- Video Overlay Info -->
+            <div class="relative z-10 flex items-center justify-between text-xs text-white bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10">
+              <span class="font-bold flex items-center space-x-2">
+                <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                <span>Üslü İfadelerin Temel Kuralları (Doping Hafıza Canlandırması)</span>
+              </span>
+              <span id="video-playback-rate-badge" class="px-2 py-0.5 rounded bg-purple-600/80 font-mono font-bold">1.0x</span>
+            </div>
+
+            <!-- Video Controls Bar -->
+            <div class="relative z-10 bg-black/80 backdrop-blur-md p-3 rounded-xl border border-white/10 flex items-center justify-between space-x-4">
+              <div class="flex items-center space-x-3">
+                <button id="btn-video-play-pause" onclick="togglePlayPause()" class="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg text-xs transition-colors">
+                  ▶ Oynat
+                </button>
+                <span class="font-mono text-xs text-gray-300" id="video-timer">00:00 / 02:30</span>
+              </div>
+
+              <!-- Speed Controller Buttons -->
+              <div class="flex items-center space-x-1.5 text-xs font-semibold" id="speed-buttons">
+                <button onclick="setVideoSpeed(1.0)" id="btn-speed-1" class="px-2.5 py-1 rounded bg-gray-800 text-gray-300 hover:bg-gray-700">1x</button>
+                <button onclick="setVideoSpeed(1.25)" id="btn-speed-125" class="px-2.5 py-1 rounded bg-gray-800 text-gray-300 hover:bg-gray-700">1.25x</button>
+                <button onclick="setVideoSpeed(1.5)" id="btn-speed-15" class="px-2.5 py-1 rounded bg-gray-800 text-gray-300 hover:bg-gray-700">1.5x</button>
+                <button onclick="setVideoSpeed(2.0)" id="btn-speed-2" class="px-2.5 py-1 rounded bg-purple-600 text-white font-bold">2x</button>
+              </div>
+
+              <button onclick="jumpToTab('drag')" class="text-xs bg-indigo-600 hover:bg-indigo-500 px-3 py-1.5 rounded-lg text-white font-semibold">
+                Alıştırmaya Geç ➔
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab Content 2: Drag and Drop Interactive Exercise -->
+        <div id="tab-content-drag" class="hidden space-y-4">
+          <div class="p-6 rounded-2xl bg-[#111422] border border-gray-800 space-y-6">
+            <div>
+              <h3 class="text-lg font-bold text-white">İnteraktif Eşleştirme Alıştırması</h3>
+              <p class="text-xs text-gray-400">Sol taraftaki üslü kartları sürükleyip sağdaki doğru eşdeğer kutusuna bırakın.</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-8">
+              <!-- Draggable Items -->
+              <div class="space-y-3">
+                <div class="text-xs font-semibold text-purple-400 uppercase tracking-wider">Sürüklenecek İfadeler</div>
+                <div id="drag-item-2cubed" draggable="true" ondragstart="onDragStart(event, '8')" class="p-4 rounded-xl bg-purple-900/50 border border-purple-500/50 text-white font-mono font-bold text-center cursor-grab active:cursor-grabbing hover:border-purple-400 transition-all select-none">
+                  2³ (İkinin Küpü)
+                </div>
+                <div id="drag-item-3squared" draggable="true" ondragstart="onDragStart(event, '9')" class="p-4 rounded-xl bg-purple-900/50 border border-purple-500/50 text-white font-mono font-bold text-center cursor-grab active:cursor-grabbing hover:border-purple-400 transition-all select-none">
+                  3² (Üçün Karesi)
+                </div>
+                <div id="drag-item-5zero" draggable="true" ondragstart="onDragStart(event, '1')" class="p-4 rounded-xl bg-purple-900/50 border border-purple-500/50 text-white font-mono font-bold text-center cursor-grab active:cursor-grabbing hover:border-purple-400 transition-all select-none">
+                  5⁰ (Sıfırıncı Kuvvet)
+                </div>
+              </div>
+
+              <!-- Drop Target Zones -->
+              <div class="space-y-3">
+                <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Hedef Kutuları</div>
+                <div id="drop-target-8" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event, '8')" class="p-4 rounded-xl border-2 border-dashed border-gray-700 bg-gray-900/50 text-gray-400 text-center font-bold font-mono transition-all">
+                  Hedef Alanı: 8
+                </div>
+                <div id="drop-target-9" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event, '9')" class="p-4 rounded-xl border-2 border-dashed border-gray-700 bg-gray-900/50 text-gray-400 text-center font-bold font-mono transition-all">
+                  Hedef Alanı: 9
+                </div>
+                <div id="drop-target-1" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event, '1')" class="p-4 rounded-xl border-2 border-dashed border-gray-700 bg-gray-900/50 text-gray-400 text-center font-bold font-mono transition-all">
+                  Hedef Alanı: 1
+                </div>
+              </div>
+            </div>
+
+            <div id="drag-feedback" class="text-xs font-semibold text-emerald-400 hidden">
+              ✓ Harika! Eşleştirme başarıyla tamamlandı.
+            </div>
+
+            <div class="flex justify-end">
+              <button onclick="jumpToTab('quiz')" class="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs">
+                Mini Teste Başla ➔
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab Content 3: Mini Quiz (Questions & Radio Options) -->
+        <div id="tab-content-quiz" class="hidden space-y-4">
+          <div class="p-6 rounded-2xl bg-[#111422] border border-gray-800 space-y-6" id="quiz-container">
+            <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+              <div>
+                <span class="text-xs text-purple-400 font-bold">SORU 1 / 1</span>
+                <h3 class="text-base font-bold text-white mt-1">
+                  $2^3 \cdot 2^4$ ifadesinin eşiti aşağıdakilerden hangisidir?
+                </h3>
+              </div>
+              <span class="px-2.5 py-1 rounded-md bg-purple-950 text-purple-300 border border-purple-800 text-xs font-mono">
+                Puan: 10
+              </span>
+            </div>
+
+            <!-- Radio Options A, B, C, D, E -->
+            <div class="space-y-3" id="quiz-options">
+              <label id="option-a-label" class="flex items-center space-x-3 p-3.5 rounded-xl bg-[#090b12] border border-gray-800 hover:border-purple-600 cursor-pointer transition-all">
+                <input type="radio" name="quiz-answer" value="A" id="radio-opt-A" class="accent-purple-500 w-4 h-4 cursor-pointer" />
+                <span class="font-bold text-purple-400 text-sm">A)</span>
+                <span class="text-sm text-gray-200" id="text-opt-A">2⁷ (Doğru Yanıt)</span>
+              </label>
+
+              <label id="option-b-label" class="flex items-center space-x-3 p-3.5 rounded-xl bg-[#090b12] border border-gray-800 hover:border-purple-600 cursor-pointer transition-all">
+                <input type="radio" name="quiz-answer" value="B" id="radio-opt-B" class="accent-purple-500 w-4 h-4 cursor-pointer" />
+                <span class="font-bold text-purple-400 text-sm">B)</span>
+                <span class="text-sm text-gray-200" id="text-opt-B">2¹²</span>
+              </label>
+
+              <label id="option-c-label" class="flex items-center space-x-3 p-3.5 rounded-xl bg-[#090b12] border border-gray-800 hover:border-purple-600 cursor-pointer transition-all">
+                <input type="radio" name="quiz-answer" value="C" id="radio-opt-C" class="accent-purple-500 w-4 h-4 cursor-pointer" />
+                <span class="font-bold text-purple-400 text-sm">C)</span>
+                <span class="text-sm text-gray-200" id="text-opt-C">4⁷</span>
+              </label>
+
+              <label id="option-d-label" class="flex items-center space-x-3 p-3.5 rounded-xl bg-[#090b12] border border-gray-800 hover:border-purple-600 cursor-pointer transition-all">
+                <input type="radio" name="quiz-answer" value="D" id="radio-opt-D" class="accent-purple-500 w-4 h-4 cursor-pointer" />
+                <span class="font-bold text-purple-400 text-sm">D)</span>
+                <span class="text-sm text-gray-200" id="text-opt-D">4¹²</span>
+              </label>
+
+              <label id="option-e-label" class="flex items-center space-x-3 p-3.5 rounded-xl bg-[#090b12] border border-gray-800 hover:border-purple-600 cursor-pointer transition-all">
+                <input type="radio" name="quiz-answer" value="E" id="radio-opt-E" class="accent-purple-500 w-4 h-4 cursor-pointer" />
+                <span class="font-bold text-purple-400 text-sm">E)</span>
+                <span class="text-sm text-gray-200" id="text-opt-E">64</span>
+              </label>
+            </div>
+
+            <!-- Submit Quiz Button -->
+            <div class="flex items-center justify-between pt-4 border-t border-gray-800">
+              <span class="text-xs text-gray-500" id="quiz-status-hint">Lütfen bir seçenek işaretleyin veya testi bitirin.</span>
+              <button id="btn-submit-quiz" onclick="finishQuiz()" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-purple-600/30 transition-all">
+                Testi Bitir &amp; Analize Git
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab Content 4: Analysis & Net Dashboard (Target Assertion) -->
+        <div id="tab-content-analysis" class="hidden space-y-6">
+          <div id="analysis-panel" class="p-6 rounded-2xl bg-[#111422] border border-gray-800 space-y-6">
+            <div class="flex items-center justify-between border-b border-gray-800 pb-4">
+              <div>
+                <span class="text-xs font-bold text-emerald-400">TEST TAMAMLANDI</span>
+                <h3 class="text-xl font-bold text-white mt-1">Öğrenci Performans &amp; Net Analizi</h3>
+              </div>
+              <div class="flex items-center space-x-2">
+                <span class="px-3 py-1 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-800 text-xs font-bold">
+                  Sistem Sağlıklı (Not Crashed)
+                </span>
+              </div>
+            </div>
+
+            <!-- Net Metrics Grid -->
+            <div class="grid grid-cols-4 gap-4" id="net-graph">
+              <div class="p-4 rounded-xl bg-[#090b12] border border-gray-800 text-center">
+                <div class="text-xs text-gray-400 font-semibold">Toplam Soru</div>
+                <div class="text-2xl font-black text-white mt-1">1</div>
+              </div>
+              <div class="p-4 rounded-xl bg-[#090b12] border border-emerald-900/50 text-center">
+                <div class="text-xs text-emerald-400 font-semibold">Doğru</div>
+                <div class="text-2xl font-black text-emerald-400 mt-1" id="stat-correct">1</div>
+              </div>
+              <div class="p-4 rounded-xl bg-[#090b12] border border-red-900/50 text-center">
+                <div class="text-xs text-red-400 font-semibold">Yanlış</div>
+                <div class="text-2xl font-black text-red-400 mt-1" id="stat-wrong">0</div>
+              </div>
+              <div class="p-4 rounded-xl bg-[#090b12] border border-purple-900/50 text-center">
+                <div class="text-xs text-purple-400 font-semibold">Net Puanı</div>
+                <div class="text-2xl font-black text-purple-400 mt-1" id="stat-net">1.00</div>
+              </div>
+            </div>
+
+            <!-- Graphical Bar -->
+            <div class="space-y-2">
+              <div class="flex justify-between text-xs font-semibold">
+                <span class="text-gray-400">Konu Hakimiyet Düzeyi (Üslü Sayılar)</span>
+                <span class="text-emerald-400" id="stat-percentage">%100 Başarı</span>
+              </div>
+              <div class="w-full h-3 bg-gray-900 rounded-full overflow-hidden border border-gray-800">
+                <div id="stat-progress-bar" class="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full w-full transition-all duration-700"></div>
+              </div>
+            </div>
+
+            <div class="p-4 rounded-xl bg-purple-950/30 border border-purple-800/40 text-xs text-purple-200">
+              💡 <strong>Yapay Zeka Koç Değerlendirmesi:</strong> Üslü sayılar çarpma kuralında tabanlar aynıyken üslerin toplandığı kuralı başarıyla kavrandı. Sıradaki hedef: Köklü Sayılar.
+            </div>
+
+            <div class="flex justify-between">
+              <button onclick="goHome()" class="px-5 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold text-xs">
+                Ana Panele Dön
+              </button>
+              <button onclick="jumpToTab('video')" class="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs">
+                Dersi Tekrarla
+              </button>
+            </div>
+          </div>
+
+          <!-- Crash Error Boundary (When Simulated Crash is ON) -->
+          <div id="crash-screen" class="hidden p-8 rounded-2xl bg-red-950/80 border-2 border-red-600 text-center space-y-4">
+            <div class="text-5xl">💥</div>
+            <h2 class="text-2xl font-black text-red-300">FATAL ERROR: Application Render Crashed!</h2>
+            <p class="text-sm text-red-200 font-mono">
+              Uncaught TypeError: Cannot read properties of undefined (reading 'renderAnalysisPanel')
+            </p>
+            <button onclick="toggleSimulatedCrash(false)" class="px-4 py-2 bg-red-800 text-white font-bold text-xs rounded-lg">
+              Çökmeyi Sıfırla
+            </button>
+          </div>
+        </div>
+
+      </section>
+    </main>
+  </div>
+
+  <!-- Simulated Video Canvas Animation Script & Logic -->
+  <script>
+    let currentSpeed = 1.0;
+    let isPlaying = false;
+    let currentTimeSec = 0;
+    let totalDurationSec = 150;
+    let canvasInterval = null;
+    let isCrashMode = false;
+
+    const canvas = document.getElementById('video-canvas');
+    const ctx = canvas.getContext('2d');
+
+    function drawVideoFrame() {
+      if (!ctx) return;
+      ctx.fillStyle = '#090a12';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Grid background
+      ctx.strokeStyle = '#1a1f33';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < canvas.width; x += 40) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+
+      // Animated glowing wave
+      const time = currentTimeSec * 2;
+      ctx.strokeStyle = '#8b5cf6';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      for (let x = 0; x < canvas.width; x += 5) {
+        const y = canvas.height / 2 + Math.sin(x * 0.02 + time) * 45;
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      // Math illustration
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 28px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Üslü Sayılarda Çarpma: 2³ · 2⁴ = 2³⁺⁴ = 2⁷', canvas.width / 2, canvas.height / 2 - 80);
+
+      ctx.fillStyle = '#06b6d4';
+      ctx.font = '16px monospace';
+      ctx.fillText(`Hız: ${currentSpeed.toFixed(2)}x | Zaman: ${currentTimeSec.toFixed(1)}s / ${totalDurationSec}s`, canvas.width / 2, canvas.height / 2 + 100);
+    }
+
+    drawVideoFrame();
+
+    function togglePlayPause() {
+      isPlaying = !isPlaying;
+      const btn = document.getElementById('btn-video-play-pause');
+      if (isPlaying) {
+        btn.textContent = '❚❚ Duraklat';
+        btn.className = 'px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg text-xs';
+        startPlayback();
+      } else {
+        btn.textContent = '▶ Oynat';
+        btn.className = 'px-4 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg text-xs';
+        clearInterval(canvasInterval);
+      }
+    }
+
+    function startPlayback() {
+      clearInterval(canvasInterval);
+      canvasInterval = setInterval(() => {
+        currentTimeSec += 0.1 * currentSpeed;
+        if (currentTimeSec >= totalDurationSec) {
+          currentTimeSec = totalDurationSec;
+          togglePlayPause();
+        }
+        updateTimerDisplay();
+        drawVideoFrame();
+      }, 100);
+    }
+
+    function updateTimerDisplay() {
+      const mins = Math.floor(currentTimeSec / 60);
+      const secs = Math.floor(currentTimeSec % 60);
+      const str = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+      document.getElementById('video-timer').textContent = `${str} / 02:30`;
+    }
+
+    function setVideoSpeed(spd) {
+      currentSpeed = spd;
+      document.getElementById('video-playback-rate-badge').textContent = `${spd}x`;
+      ['1', '125', '15', '2'].forEach(id => {
+        const el = document.getElementById(`btn-speed-${id}`);
+        if (el) {
+          el.className = 'px-2.5 py-1 rounded bg-gray-800 text-gray-300 hover:bg-gray-700';
+        }
+      });
+      const activeId = spd === 1 ? '1' : spd === 1.25 ? '125' : spd === 1.5 ? '15' : '2';
+      const activeEl = document.getElementById(`btn-speed-${activeId}`);
+      if (activeEl) {
+        activeEl.className = 'px-2.5 py-1 rounded bg-purple-600 text-white font-bold';
+      }
+      drawVideoFrame();
+    }
+
+    function setLevel(lvl) {
+      ['PRIMARY', 'MIDDLE_LGS', 'HIGH_YKS'].forEach(l => {
+        const btn = document.getElementById(`btn-level-${l}`);
+        if (btn) {
+          btn.className = 'px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition-all';
+        }
+      });
+      const act = document.getElementById(`btn-level-${lvl}`);
+      if (act) {
+        act.className = 'px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow transition-all';
+      }
+    }
+
+    function toggleSubmenu(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.toggle('hidden');
+    }
+
+    function openTopic(subject, topic) {
+      document.getElementById('view-dashboard').classList.add('hidden');
+      document.getElementById('view-lesson').classList.remove('hidden');
+      document.getElementById('lesson-title').textContent = `${subject} - ${topic}`;
+      jumpToTab('video');
+      // Auto start video
+      if (!isPlaying) togglePlayPause();
+    }
+
+    function goHome() {
+      document.getElementById('view-lesson').classList.add('hidden');
+      document.getElementById('view-dashboard').classList.remove('hidden');
+      if (isPlaying) togglePlayPause();
+    }
+
+    function jumpToTab(tab) {
+      ['video', 'drag', 'quiz', 'analysis'].forEach(t => {
+        document.getElementById(`tab-content-${t}`)?.classList.add('hidden');
+        const b = document.getElementById(`tab-btn-${t}`);
+        if (b) b.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-800 text-gray-300 hover:bg-gray-700';
+      });
+      document.getElementById(`tab-content-${tab}`)?.classList.remove('hidden');
+      const ab = document.getElementById(`tab-btn-${tab}`);
+      if (ab) ab.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-600 text-white';
+    }
+
+    // Drag and Drop Logic
+    function onDragStart(e, targetId) {
+      e.dataTransfer.setData('text/plain', targetId);
+      e.target.classList.add('dragging');
+    }
+    function onDragOver(e) {
+      e.preventDefault();
+      e.currentTarget.classList.add('drop-hover');
+    }
+    function onDragLeave(e) {
+      e.currentTarget.classList.remove('drop-hover');
+    }
+    function onDrop(e, expectedId) {
+      e.preventDefault();
+      e.currentTarget.classList.remove('drop-hover');
+      const draggedData = e.dataTransfer.getData('text/plain');
+      if (draggedData === expectedId) {
+        e.currentTarget.innerHTML = `<span class="text-emerald-400 font-bold">✓ Eşleşti: ${expectedId}</span>`;
+        e.currentTarget.classList.add('border-emerald-500', 'bg-emerald-950/40');
+        document.getElementById('drag-feedback').classList.remove('hidden');
+      }
+    }
+
+    // Quiz Solver Logic
+    function finishQuiz() {
+      const selected = document.querySelector('input[name="quiz-answer"]:checked')?.value;
+      const isCorrect = selected === 'A';
+      const isWrong = selected && selected !== 'A';
+
+      const statCorrect = document.getElementById('stat-correct');
+      const statWrong = document.getElementById('stat-wrong');
+      const statNet = document.getElementById('stat-net');
+      const statPerc = document.getElementById('stat-percentage');
+      const statBar = document.getElementById('stat-progress-bar');
+
+      if (isCorrect) {
+        statCorrect.textContent = '1';
+        statWrong.textContent = '0';
+        statNet.textContent = '1.00';
+        statPerc.textContent = '%100 Başarı';
+        statBar.style.width = '100%';
+        statBar.className = 'h-full bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full';
+      } else if (isWrong) {
+        statCorrect.textContent = '0';
+        statWrong.textContent = '1';
+        statNet.textContent = '-0.25';
+        statPerc.textContent = '%0 Başarı';
+        statBar.style.width = '0%';
+        statBar.className = 'h-full bg-red-500 rounded-full';
+      } else {
+        statCorrect.textContent = '0';
+        statWrong.textContent = '0';
+        statNet.textContent = '0.00';
+        statPerc.textContent = '%0 Boş Bırakıldı';
+        statBar.style.width = '0%';
+      }
+
+      jumpToTab('analysis');
+      applyCrashState();
+    }
+
+    function toggleSimulatedCrash(checked) {
+      isCrashMode = checked;
+      applyCrashState();
+    }
+
+    function applyCrashState() {
+      const normalPanel = document.getElementById('analysis-panel');
+      const crashScreen = document.getElementById('crash-screen');
+      if (isCrashMode) {
+        normalPanel.classList.add('hidden');
+        crashScreen.classList.remove('hidden');
+      } else {
+        normalPanel.classList.remove('hidden');
+        crashScreen.classList.add('hidden');
+      }
+    }
+  </script>
+</body>
+</html>

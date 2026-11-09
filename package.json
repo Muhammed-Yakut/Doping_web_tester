@@ -1,0 +1,121 @@
+{
+  "name": "doping-web-tester",
+  "version": "1.0.0",
+  "description": "AI-Powered Autonomous Desktop & Web Test Runner (Electron + Playwright + Gemini)",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "server": "tsx src/server/index.ts",
+    "client": "vite --port 5173",
+    "dev": "tsx src/server/index.ts",
+    "build:client": "vite build",
+    "build:server": "esbuild src/server/index.ts --bundle --platform=node --target=node20 --format=esm --banner:js=\"import { createRequire } from 'module'; const require = createRequire(import.meta.url);\" --outfile=dist-server/index.js --external:playwright --external:fsevents",
+    "build": "npm run build:client && npm run build:server",
+    "desktop": "npm run build && electron .",
+    "dist:mac": "npm run build && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist": "npm run build && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder -mw",
+    "test:cli": "tsx test-cli.ts",
+    "crawler": "tsx scripts/run-crawler.ts"
+  },
+  "build": {
+    "appId": "com.doping.webtester",
+    "productName": "Doping Test Studio",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist-server/**/*",
+      "src/client/dist/**/*",
+      "src/server/mock-target/public/**/*",
+      "src/shared/data/app_topology.json",
+      "electron/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "src/shared/data/app_topology.json",
+        "to": "src/shared/data/app_topology.json"
+      },
+      {
+        "from": "src/server/mock-target/public",
+        "to": "src/server/mock-target/public"
+      }
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "**/node_modules/playwright/**",
+      "**/node_modules/playwright-core/**"
+    ],
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.developer-tools",
+      "identity": null
+    },
+    "dmg": {
+      "title": "${productName} ${version}"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  },
+  "keywords": [
+    "playwright",
+    "electron",
+    "gemini",
+    "ai",
+    "test-automation",
+    "doping-hafiza"
+  ],
+  "author": "Antigravity Senior Test Architect",
+  "license": "MIT",
+  "dependencies": {
+    "@google/genai": "^2.32.0",
+    "clsx": "^2.1.1",
+    "cors": "^2.8.5",
+    "docx": "^9.15.3",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "fuse.js": "^7.5.0",
+    "lucide-react": "^1.16.0",
+    "playwright": "^1.50.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^3.0.1",
+    "winston": "^3.17.0",
+    "ws": "^8.18.0",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.4",
+    "@tailwindcss/vite": "^4.3.4",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.13.1",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "@types/ws": "^8.5.14",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "electron": "^41.7.1",
+    "electron-builder": "^26.18.0",
+    "esbuild": "^0.28.2",
+    "postcss": "^8.5.1",
+    "tailwindcss": "^4.3.4",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vite": "^6.1.0"
+  }
+}
